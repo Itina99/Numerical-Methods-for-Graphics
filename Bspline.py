@@ -64,3 +64,5 @@ def update(val):
 slider.on_changed(update)
 
 plt.show()
+
+print("Committest")
