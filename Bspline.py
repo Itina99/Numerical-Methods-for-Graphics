@@ -6,9 +6,11 @@ from matplotlib import cm
 import pygismo as gs  # Import pygism
 from matplotlib.widgets import Slider
 
+import random
+
 def plot_bspline_basis(degree):
     # Define the number of control points
-    num_control_points = 5
+    num_control_points = random.randint(2, 10)
     
     # Create a uniform knot vector with degree control
     # The first and last degree+1 knots are repeated, and internal knots are uniformly spaced
