@@ -13,10 +13,6 @@ def create_basis( degree = 2):
     basis = gs.nurbs.gsBSplineBasis(kv)
     return basis
 
-# Example usage
-
-
-
 #basis computations
 def compute_basis_evals(basis, N=100):
     x_vals = np.linspace(0, 1, N)
