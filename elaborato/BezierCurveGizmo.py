@@ -50,15 +50,6 @@ class CurveEditor:
         self.ax.set_xlim(x_min - margin, x_max + margin)
         self.ax.set_ylim(y_min - margin, y_max + margin)
 
-    def construct_curve(self):
-        """Reconstruct the curve using the current control points."""
-        # Create knot vector
-        knot_array = np.zeros(self.degree + 1)
-        knot_array = np.append(knot_array, np.ones(self.degree + 1))
-        kv = gs.nurbs.gsKnotVector(np.array(knot_array), self.degree)
-        basis = gs.nurbs.gsBSplineBasis(kv)
-        return gs.nurbs.gsBSpline(basis, self.coefs)
-
     def plot(self):
         """Plot the curve, control points, and control polygon."""
         self.ax.clear()
@@ -114,58 +105,62 @@ class CurveEditor:
         self.curve = self.construct_curve()  # Reconstruct the curve
         self.plot()  # Redraw the plot
 
-# Codice per la proprietà di linear precision
-"""
-    la curva generata dal poligono di controllo
-    i cui vertici sono allineati su un segmento di retta e fra loro equidistanti
-    è il segmento di retta compreso tra i punti di controllo con t che rappresenta
-    la lunghezza dell'arco sul segmento.
-""" 
-def linear_precision():
-    degrees = [2, 3, 4]
-    basis = []
-    ctl_points = []
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 10))
-    axes = [ax1, ax2, ax3]
-    for idx, d in enumerate(degrees):
-        knot_array = np.zeros(d + 1)
-        knot_array = np.append(knot_array, np.ones(d + 1))
-        kv = gs.nurbs.gsKnotVector(np.array(knot_array), d)
-        basis.append(gs.nurbs.gsBSplineBasis(kv))
+    def linear_precision(self):
+    # Codice per la proprietà di linear precision
+        """
+            la curva generata dal poligono di controllo
+            i cui vertici sono allineati su un segmento di retta e fra loro equidistanti
+            è il segmento di retta compreso tra i punti di controllo con t che rappresenta
+            la lunghezza dell'arco sul segmento.
+        """ 
+        degrees = [2, 3, 4]
+        basis = []
+        ctl_points = []
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 10))
+        axes = [ax1, ax2, ax3]
+        for idx, d in enumerate(degrees):
+            knot_array = np.zeros(d + 1)
+            knot_array = np.append(knot_array, np.ones(d + 1))
+            kv = gs.nurbs.gsKnotVector(np.array(knot_array), d)
+            basis.append(gs.nurbs.gsBSplineBasis(kv))
 
-        # Verifica dell'equazione per ciascuna base creata
-        t = np.random.random()
-        res = 0
+            # Verifica dell'equazione per ciascuna base creata
+            t = np.random.random()
+            res = 0
 
-        for i in range(basis[idx].size()):
-            res += i/d * basis[idx].evalSingle(i, np.array([t]))
-        print(np.isclose(res[0][0], t))
-    
-    # Creazione di più esempi sullo stesso plot
-        # Nessun controllo su dove si disegnano i punti, tanto devono essere allineati ed equidistanti
-        xs = np.linspace(np.random.random() * d, 1 + np.random.random() * d, d+1)
-        ys = np.linspace(np.random.random() * d, 1 + np.random.random() * d, d+1)
-        ctl_points.append(np.vstack((xs, ys)).T)
-    
-    # Calcolo le curve
-    N = 100
-    x = np.linspace(0, 1, N)
-    x = np.matrix(np.meshgrid(x))
-    for i, ax in enumerate(axes):
-        curve =  gs.nurbs.gsBSpline(basis[i], ctl_points[i]) 
-        y = curve.eval(x)
-        ax.plot(y[0, :], y[1, :], color='purple', linewidth='3', label=f'Bezier Curve degree {degrees[i]}')
-        ax.plot(ctl_points[i][:, 0], ctl_points[i][:, 1], 'ro', label='Control Points', picker=5)
-        ax.plot(ctl_points[i][:, 0], ctl_points[i][:, 1], '-.', color='yellow', label='Control Polygon')
-        ax.legend()
-    plt.show()
+            for i in range(basis[idx].size()):
+                res += i/d * basis[idx].evalSingle(i, np.array([t]))
+            print(np.isclose(res[0][0], t))
+        
+        # Creazione di più esempi sullo stesso plot
+            # Nessun controllo su dove si disegnano i punti, tanto devono essere allineati ed equidistanti
+            xs = np.linspace(np.random.random() * d, 1 + np.random.random() * d, d+1)
+            ys = np.linspace(np.random.random() * d, 1 + np.random.random() * d, d+1)
+            ctl_points.append(np.vstack((xs, ys)).T)
+        
+        # Calcolo le curve
+        N = 100
+        x = np.linspace(0, 1, N)
+        x = np.matrix(np.meshgrid(x))
+        for i, ax in enumerate(axes):
+            curve =  gs.nurbs.gsBSpline(basis[i], ctl_points[i]) 
+            y = curve.eval(x)
+            ax.plot(y[0, :], y[1, :], color='purple', linewidth='3', label=f'Bezier Curve degree {degrees[i]}')
+            ax.plot(ctl_points[i][:, 0], ctl_points[i][:, 1], 'ro', label='Control Points', picker=5)
+            ax.plot(ctl_points[i][:, 0], ctl_points[i][:, 1], '-.', color='yellow', label='Control Polygon')
+            ax.legend()
+        plt.show()
+
+
+
     
 if __name__ == '__main__':
-    linear_precision()
+    
 
-    # Select points interactivel
-    # control_points, degree = select_points()
+    #Select points interactivel
+    control_points, degree = select_points()
 
     # Initialize the editor
-    # editor = CurveEditor(control_points, degree)
+    editor = CurveEditor(control_points, degree)
+    editor.linear_precision()
 
