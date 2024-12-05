@@ -151,9 +151,87 @@ class CurveEditor:
             ax.legend()
         plt.show()
 
-
-
+def bezier_3d(deg):
+    """
+        Permette di disegnare una curva di Bezier nello spazio
+    """
+    # Creo la base di bernstein corrispondente al grado in input
+    knot_array = np.zeros(deg + 1)
+    knot_array = np.append(knot_array, np.ones(deg+ 1))
+    kv = gs.nurbs.gsKnotVector(np.array(knot_array), deg)
+    basis = gs.nurbs.gsBSplineBasis(kv)
     
+    # Prendo dei punti casuali nello spazio 3d
+    x_points = np.random.uniform(0, 10, deg + 1)
+    y_points = np.random.uniform(0, 10, deg + 1)
+    z_points = np.random.uniform(0, 10, deg + 1)
+    points = np.vstack((x_points, y_points, z_points)).T
+    print(points)
+
+    # Calcolo la curva e la valuto nello spazio
+    ax = plt.figure().add_subplot(projection='3d')
+
+    curve = gs.nurbs.gsBSpline(basis, points)
+    N = 100
+    x = np.linspace(0, 1, N)
+    x = np.matrix(np.meshgrid(x))
+    y = curve.eval(x)
+    ax.plot(y[0, :], y[1, :], y[2, :], color='purple', linewidth='3')
+    ax.plot(points[:, 0], points[:, 1], points[:, 2], 'ro', label='Control Points', picker=5)
+    ax.plot(points[:, 0], points[:, 1], points[:, 2], '-.', color='red', label='Control Polygon')
+    plt.show()
+
+def curvature(deg):
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    knot_array = np.zeros(deg + 1)
+    knot_array = np.append(knot_array, np.ones(deg + 1))
+    kv = gs.nurbs.gsKnotVector(np.array(knot_array), deg)
+    basis = gs.nurbs.gsBSplineBasis(kv)
+
+    x_points = np.random.uniform(0, 10, deg + 1)
+    y_points = np.random.uniform(0, 10, deg + 1)
+
+    points = np.vstack((x_points, y_points)).T
+
+    N = 100
+    x = np.linspace(0, 1, N)
+    x_mat = np.matrix(np.meshgrid(x))
+    curve = gs.nurbs.gsBSpline(basis, points)
+
+    a = curve.deriv(x_mat)
+    b = curve.deriv2(x_mat)
+    y = curve.eval(x_mat)
+
+    curvature = np.linalg.norm(np.cross(a, b, axis=0), axis=0)/np.linalg.norm(a, axis=0)**3
+
+    ax1.plot(y[0, :], y[1, :], color='purple', linewidth='3')
+    ax1.plot(points[:, 0], points[:, 1], 'ro', label='Control Points', picker=5)
+    ax1.plot(points[:, 0], points[:, 1], '-.', color='red', label='Control Polygon')
+
+    ax2.plot(x, curvature, color='purple', linewidth='3')
+
+    ax3.plot(b[0, :], b[1, :], color='purple', linewidth='3')
+
+    plt.show()
+
+    return a, points
+
+"""
+Funzione d'emergenza per il calcolo della derivata prima; equivalente a curve.deriv
+def st_derivative(points, param):
+    knot_array = np.zeros(2)
+    knot_array = np.append(knot_array, np.ones(2))
+    kv = gs.nurbs.gsKnotVector(np.array(knot_array), 1)
+    basis = gs.nurbs.gsBSplineBasis(kv)
+
+    print(np.array(points[0+1, :] - points[0, :]))
+
+    sum = 0
+    for i in range(2):
+        sum += np.matmul((points[i+1, :] - points[i, :]).reshape(2, 1), basis.evalSingle(i, param))
+    return 2 * sum 
+"""
+
 if __name__ == '__main__':
     
 
@@ -163,4 +241,8 @@ if __name__ == '__main__':
     # Initialize the editor
     editor = CurveEditor(control_points, degree)
     editor.linear_precision()
+
+    bezier_3d(5)
+
+    curvature(5)
 
