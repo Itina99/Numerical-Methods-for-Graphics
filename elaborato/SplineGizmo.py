@@ -17,7 +17,7 @@ def select_points():
     coefs[:, 0] = np.array([pt[0] for pt in pts])
     coefs[:, 1] = np.array([pt[1] for pt in pts])
 
-    return coefs, 3  # Default to cubic degree
+    return coefs, 2  # Default to cubic degree
 
 
 class SplineEditor:
@@ -82,40 +82,39 @@ class SplineEditor:
         self.ax.set_xlim(x_min - margin, x_max + margin)
         self.ax.set_ylim(y_min - margin, y_max + margin)
 
-    def plot(self, highlight_range=None):
-        """Plot the curve and control points."""
+    def plot(self, highlight_range=None, affected_point=None):
+        """Plot the curve and control points, highlighting a specific range if provided."""
         self.ax.clear()
         self.set_axes_limits()
 
-        # Evaluate the curve
-        N = 100  # Number of points on the curve
-        t_vals = np.linspace(self.knots[self.degree], self.knots[-self.degree - 1], N)  # Parameter domain
+        # Define the full range of parameter values based on the knots (excluding the clamped values)
+        N = 100  # Number of evaluation points
+        t_vals = np.linspace(self.knots[self.degree], self.knots[-self.degree - 1], N)
         evaluated_points = np.array([self.curve.eval(np.array([t])) for t in t_vals]).squeeze()
 
-        # Plot the curve
-        if evaluated_points.ndim == 2:
-            self.ax.plot(evaluated_points[:, 0], evaluated_points[:, 1], label='B-Spline Curve')
-        else:
-            print("Error: Evaluated points are not 2D. Check curve evaluation.")
+        # Plot the full spline curve in blue
+        self.ax.plot(evaluated_points[:, 0], evaluated_points[:, 1], label='B-Spline Curve', color='blue')   
 
-        # Highlight the affected area if specified
-        if highlight_range is not None:
-            print(f"Highlight range: {highlight_range}")  # Debugging statement
-            highlight_t_vals = np.linspace(highlight_range[0], highlight_range[1], N)
-            highlight_points = np.array([self.curve.eval(np.array([t])) for t in highlight_t_vals]).squeeze()
-            if highlight_points.ndim == 2:
-                self.ax.plot(highlight_points[:, 0], highlight_points[:, 1], color='red', label='Affected Area')
+        # Highlight the affected control polygon if a control point is specified
+        if affected_point is not None:
+            start = max(0, affected_point - self.degree)
+            end = min(self.coefs.shape[0], affected_point + self.degree + 1)
+            affected_coefs = self.coefs[start:end]
+            
+            # Plot the affected polygon
+            self.ax.fill(affected_coefs[:, 0], affected_coefs[:, 1], color='red', alpha=0.3, label='Affected Control Polygon')
 
-        # Plot control points and polygon
+        # Plot control points and control polygon
         self.control_points, = self.ax.plot(self.coefs[:, 0], self.coefs[:, 1], 'ro', label='Control Points', picker=5)
         self.control_polygon, = self.ax.plot(self.coefs[:, 0], self.coefs[:, 1], '--', color='gray', label='Control Polygon')
 
+        # Add the legend and labels
         self.ax.legend()
         self.ax.set_xlabel(r'$x$')
         self.ax.set_ylabel(r'$y$')
 
+        # Redraw the plot
         plt.draw()
-
 
     def on_press(self, event):
         if event.inaxes != self.ax:
@@ -141,8 +140,8 @@ class SplineEditor:
             return
         self.coefs[self.dragging_point] = [event.xdata, event.ydata]
         self.curve = self.construct_curve()
-        self.visualize_locality(self.dragging_point)
-        self.plot()
+        self.plot(affected_point=self.dragging_point)
+
 
     def visualize_locality(self, modified_point_index):
         start = self.knots[modified_point_index]
