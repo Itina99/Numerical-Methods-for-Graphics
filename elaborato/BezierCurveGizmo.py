@@ -257,26 +257,6 @@ def st_derivative(points, curve, param):
 """
 
 if __name__ == '__main__':
-    """# Creo la base di bernstein corrispondente al grado in input
-    knot_array = np.zeros(2 + 1)
-    knot_array = np.append(knot_array, np.ones(2+ 1))
-    kv = gs.nurbs.gsKnotVector(np.array(knot_array), 2)
-    basis = gs.nurbs.gsBSplineBasis(kv)
-    
-    # Prendo dei punti casuali nello spazio 3d
-    x_points = np.random.uniform(0, 10, 2 + 1)
-    y_points = np.random.uniform(0, 10, 2 + 1)
-    points = np.vstack((x_points, y_points)).T
-
-    curve = gs.nurbs.gsBSpline(basis, points)
-    N = 100
-    x_space = np.linspace(0, 1, N)
-    x = np.matrix(np.meshgrid(x_space))
-    
-    print(ith_derivative(points, curve, 1, x))
-    print(st_derivative(points, curve, x))
-    print(curve.deriv(x))"""
-
     #Select points interactively
     control_points, degree = select_points()
 
