@@ -30,21 +30,22 @@ def create_basis(degree_a = 2, degree_b = 2):
 
     return tens_basis
 
+#basis computations
+def compute_basis_evals(basis, N=100, M=100):
+    x_vals = np.linspace(0, 1, N)
+    y_vals = np.linspace(0, 1, M)
+    XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
+    pts = np.stack((XX.flatten(),YY.flatten()))
+    ZZ = []
+    for i in range(0, 4):
+        eval = basis.evalSingle(i, pts)
+        ZZ.append(eval.reshape((N, M)))
+    return pts, XX, YY, ZZ
 
 if __name__=='__main__':
     tbasis_a = create_basis(2, 2)
 
-    N = M = 100
-    x = np.linspace(0,1,N)
-    y = np.linspace(0,1,M)
-    XX, YY = np.meshgrid(x,y,indexing='xy')
-    pts = np.stack((XX.flatten(),YY.flatten()))
-
-    z = np.zeros(tbasis_a.size(), N * M)
-    ZZ = []
-    for i in range(tbasis_a.size()):
-        z[i, :] = tbasis_a.evalSingle(i, pts)
-        ZZ.append(z[i,:].reshape((N,M)))
+    pts, XX, YY, ZZ = compute_basis_evals(tbasis_a)
 
     fig = plt.figure()
     ax = fig.add_subplot(projection ='3d')
