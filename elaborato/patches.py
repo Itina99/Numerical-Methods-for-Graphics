@@ -11,22 +11,19 @@ def create_basis(degree_a = 2, degree_b = 2):
         knot_array = np.zeros(degree + 1)
         knot_array = np.append(knot_array, np.ones(degree + 1))
         kv = gs.nurbs.gsKnotVector(np.array(knot_array), degree)
-        basis = gs.nurbs.gsBSplineBasis(kv)
 
-        tens_basis = gs.nurbs.gsTensorBSplineBasis2(basis, basis)
+        tens_basis = gs.nurbs.gsTensorBSplineBasis2(kv, kv)
 
     else:
         knot_array_a = np.zeros(degree_a + 1)
         knot_array_a = np.append(knot_array_a, np.ones(degree_a + 1))
         kv_u = gs.nurbs.gsKnotVector(np.array(knot_array_a), degree_a)
-        basis_u = gs.nurbs.gsBSplineBasis(kv_u)
 
         knot_array_b = np.zeros(degree_b + 1)
         knot_array_b = np.append(knot_array_b, np.ones(degree_b + 1))
         kv_v = gs.nurbs.gsKnotVector(np.array(knot_array_b), degree_b)
-        basis_v = gs.nurbs.gsBSplineBasis(kv_v)
 
-        tens_basis = gs.nurbs.gsTensorBSplineBasis2(basis_u, basis_v)
+        tens_basis = gs.nurbs.gsTensorBSplineBasis2(kv_u, kv_v)
 
     return tens_basis
 
@@ -37,18 +34,22 @@ def compute_basis_evals(basis, N=100, M=100):
     XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
     pts = np.stack((XX.flatten(),YY.flatten()))
     ZZ = []
-    for i in range(0, 4):
+    for i in range(0, basis.size()):
         eval = basis.evalSingle(i, pts)
         ZZ.append(eval.reshape((N, M)))
     return pts, XX, YY, ZZ
 
 if __name__=='__main__':
-    tbasis_a = create_basis(2, 2)
+    tbasis_a = create_basis(1, 1)
+
+    N = 100
+    M = 100
 
     pts, XX, YY, ZZ = compute_basis_evals(tbasis_a)
 
     fig = plt.figure()
     ax = fig.add_subplot(projection ='3d')
+    print(tbasis_a.size())
     for i in range(tbasis_a.size()):
         ax.plot_surface(XX,YY,ZZ[i],cmap=cm.coolwarm)
     plt.show()
