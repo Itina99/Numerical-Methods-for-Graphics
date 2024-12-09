@@ -9,7 +9,7 @@ def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
     # Number of interior knots
     inner_knots = num_knots - 2 * (degree + 1)
     
-    if custom_knots is not None:
+    if custom_knots is not None and len(custom_knots) == inner_knots:
         # Custom knots allow dynamic updates
         knot_vector = np.concatenate([
             np.zeros(degree + 1),
@@ -81,11 +81,21 @@ def plot():
     inner_knots = len(knot_vector) - 2 * (degree + 1)
     custom_knot_sliders = []
     custom_knot_axes = []
-    for i in range(inner_knots):
-        ax_slider = plt.axes([0.25, 0.15 - i * 0.05, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-        slider = Slider(ax_slider, f'Knot {i + 1}', 0.01, 0.99, valinit=knot_vector[degree + 1 + i])
-        custom_knot_sliders.append(slider)
-        custom_knot_axes.append(ax_slider)
+
+    def create_custom_knots_sliders():
+        """Create the custom knot sliders based on the current knot vector"""
+        for ax in custom_knot_axes:
+            ax.clear()  # Remove previous sliders and axes
+        custom_knot_sliders.clear()  # Clear previous sliders
+
+        for i in range(inner_knots):
+            ax_slider = plt.axes([0.25, 0.15 - i * 0.05, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+            slider = Slider(ax_slider, f'Knot {i + 1}', 0.01, 0.99, valinit=knot_vector[degree + 1 + i])
+            custom_knot_sliders.append(slider)
+            custom_knot_axes.append(ax_slider)
+
+    # Initial custom knot sliders
+    create_custom_knots_sliders()
 
     def update():
         # Update basis, knot vector, and evaluations
@@ -113,6 +123,9 @@ def plot():
         for kline in ax.collections:
             kline.remove()  # Clear old knots
         ax.vlines(knot_vector, ymin=0, ymax=1, colors='gray', linestyles='dashed')
+
+        # Recreate custom knot sliders
+        create_custom_knots_sliders()
 
         fig.canvas.draw_idle()
 
