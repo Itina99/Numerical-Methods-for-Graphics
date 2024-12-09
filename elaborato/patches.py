@@ -28,16 +28,12 @@ def create_basis(degree_a = 2, degree_b = 2):
     return tens_basis
 
 #basis computations
-def compute_basis_evals(basis, N=100, M=100):
-    x_vals = np.linspace(0, 1, N)
-    y_vals = np.linspace(0, 1, M)
-    XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
-    pts = np.stack((XX.flatten(),YY.flatten()))
+def compute_basis_evals(params, basis, N=100, M=100):
     ZZ = []
     for i in range(0, basis.size()):
-        eval = basis.evalSingle(i, pts)
+        eval = basis.evalSingle(i, params)
         ZZ.append(eval.reshape((N, M)))
-    return pts, XX, YY, ZZ
+    return pts, ZZ
 
 # Control point definition
 def define_control_poins(basis_size, dims=None):
@@ -59,31 +55,44 @@ def define_control_poins(basis_size, dims=None):
 
     return coefs
 
+# Basis plotting
+def plot_basis(x, y, z, basis):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection ='3d')
+    print(basis.size())
+    for i in range(basis.size()):
+        ax.plot_surface(x, y, z[i], cmap=cm.coolwarm)
+    plt.show()
+
+# Patch plotting
+def plot_bezier_patch(x, y, z, surf, params, N=100, M=100):
+    s = surf.eval(params)
+
+    z = s[2,:].reshape((N,M))
+
+    fig = plt.figure()
+    ax = fig.add_subplot(projection ='3d')
+    ax.plot_surface(x, y, z, cmap=cm.coolwarm)
+    ax.scatter(surf.coefs()[:,0],surf.coefs()[:,1],surf.coefs()[:,2])
+    plt.show()
+
+
 if __name__=='__main__':
     basis_a_deg = 2
     basis_b_deg = 2
-    tbasis_a = create_basis(basis_a_deg, basis_b_deg)
+    tbasis = create_basis(basis_a_deg, basis_b_deg)
 
     N = 100
     M = 100
+    x_vals = np.linspace(0, 1, N)
+    y_vals = np.linspace(0, 1, M)
+    XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
+    pts = np.stack((XX.flatten(),YY.flatten()))
 
-    pts, XX, YY, ZZ = compute_basis_evals(tbasis_a)
+    pts, ZZ = compute_basis_evals(pts, tbasis)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection ='3d')
-    print(tbasis_a.size())
-    for i in range(tbasis_a.size()):
-        ax.plot_surface(XX,YY,ZZ[i],cmap=cm.coolwarm)
-    plt.show()
+    plot_basis(XX, YY, ZZ, tbasis)
 
-    coefs = define_control_poins(tbasis_a.size(), dims=(basis_b_deg + 1, basis_b_deg + 1))
-    surf = gs.nurbs.gsTensorBSpline2(tbasis_a,coefs)
-    s = surf.eval(pts)
-
-    ZZ = s[2,:].reshape((N,M))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(projection ='3d')
-    ax.plot_surface(XX,YY,ZZ,cmap=cm.coolwarm)
-    ax.scatter(surf.coefs()[:,0],surf.coefs()[:,1],surf.coefs()[:,2])
-    plt.show()
+    coefs = define_control_poins(tbasis.size(), dims=(basis_b_deg + 1, basis_b_deg + 1))
+    surf = gs.nurbs.gsTensorBSpline2(tbasis,coefs)
+    plot_bezier_patch(XX, YY, ZZ, surf, pts)
