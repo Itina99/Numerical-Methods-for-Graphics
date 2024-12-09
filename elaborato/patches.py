@@ -78,8 +78,8 @@ def plot_bezier_patch(x, y, z, surf, params, N=100, M=100):
 
 
 if __name__=='__main__':
-    basis_a_deg = 2
-    basis_b_deg = 2
+    basis_a_deg = 10
+    basis_b_deg = 10
     tbasis = create_basis(basis_a_deg, basis_b_deg)
 
     N = 100
@@ -93,6 +93,6 @@ if __name__=='__main__':
 
     plot_basis(XX, YY, ZZ, tbasis)
 
-    coefs = define_control_poins(tbasis.size(), dims=(basis_b_deg + 1, basis_b_deg + 1))
+    coefs = define_control_poins(tbasis.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
     surf = gs.nurbs.gsTensorBSpline2(tbasis,coefs)
     plot_bezier_patch(XX, YY, ZZ, surf, pts)
