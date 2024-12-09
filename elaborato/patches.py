@@ -40,11 +40,16 @@ def compute_basis_evals(basis, N=100, M=100):
     return pts, XX, YY, ZZ
 
 # Control point definition
-def define_control_poins(basis_size):
+def define_control_poins(basis_size, dims=None):
     coefs = np.zeros((basis_size, 3))
 
-    x = np.linspace(0, 1, int(np.sqrt(basis_size)))
-    X, Y = np.meshgrid(x, x)
+    if np.sqrt(basis_size) == int(np.sqrt(basis_size)):
+        x = np.linspace(0, 1, int(np.sqrt(basis_size)))
+        X, Y = np.meshgrid(x, x)
+    else:
+        x = np.linspace(0, 1, dims[0])
+        y = np.linspace(0, 1, dims[1])
+        X, Y = np.meshgrid(x, y)
     coefs[:,0] = X.flatten()
     coefs[:,1] = Y.flatten()
     
@@ -55,7 +60,9 @@ def define_control_poins(basis_size):
     return coefs
 
 if __name__=='__main__':
-    tbasis_a = create_basis(2, 2)
+    basis_a_deg = 2
+    basis_b_deg = 2
+    tbasis_a = create_basis(basis_a_deg, basis_b_deg)
 
     N = 100
     M = 100
@@ -69,7 +76,7 @@ if __name__=='__main__':
         ax.plot_surface(XX,YY,ZZ[i],cmap=cm.coolwarm)
     plt.show()
 
-    coefs = define_control_poins(tbasis_a.size())
+    coefs = define_control_poins(tbasis_a.size(), dims=(basis_b_deg + 1, basis_b_deg + 1))
     surf = gs.nurbs.gsTensorBSpline2(tbasis_a,coefs)
     s = surf.eval(pts)
 
