@@ -4,7 +4,7 @@ from matplotlib import cm
 import numpy as np
 import pygismo as gs
 
-def create_basis(degree_a = 2, degree_b = 2):
+def create_bezier_basis(degree_a = 2, degree_b = 2):
     if degree_a == degree_b:
         degree = degree_a
 
@@ -26,6 +26,42 @@ def create_basis(degree_a = 2, degree_b = 2):
         tens_basis = gs.nurbs.gsTensorBSplineBasis2(kv_u, kv_v)
 
     return tens_basis
+
+def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
+    # Calculate the total number of knots
+    num_knots = num_basis_functions + degree + 2
+    # Number of interior knots
+    inner_knots = num_knots - 2 * (degree + 1)
+    
+    if custom_knots is not None and len(custom_knots) == inner_knots:
+        # Custom knots allow dynamic updates
+        knot_vector = np.concatenate([
+            np.zeros(degree + 1),
+            custom_knots,
+            np.ones(degree + 1)
+        ])
+    elif clamp:
+        # Start with clamped knots at the start
+        knot_vector = np.zeros(degree + 1)
+        # Add the interior knots
+        if inner_knots > 0:
+            knot_vector = np.append(knot_vector, np.linspace(0, 1, inner_knots + 2)[1:-1])
+        # Add clamped knots at the end
+        knot_vector = np.append(knot_vector, np.ones(degree + 1))
+    else:
+        # Uniformly spaced knots for unclamped
+        knot_vector = np.linspace(0, 1, num_knots)
+    
+    return knot_vector
+
+
+def create_bspline_basis(degree_a=2, degree_b=2, num_basis_function_a=2, num_basis_function_b=2, clamp_a=True, clamp_b=True, custom_a=None, custom_b=None):
+    knot_vector_u = generate_knots(degree_a, num_basis_function_a, clamp_a, custom_a)
+    knot_vector_v = generate_knots(degree_b, num_basis_function_b, clamp_b, custom_b)
+    kv_u = gs.nurbs.gsKnotVector(np.array(knot_vector_u), degree_a)
+    kv_v = gs.nurbs.gsKnotVector(np.array(knot_vector_v), degree_b)
+    basis = gs.nurbs.gsTensorBSplineBasis2(kv_u, kv_v)
+    return basis, kv_u, kv_v
 
 #basis computations
 def compute_basis_evals(params, basis, N=100, M=100):
@@ -65,7 +101,7 @@ def plot_basis(x, y, z, basis):
     plt.show()
 
 # Patch plotting
-def plot_bezier_patch(x, y, z, surf, params, N=100, M=100):
+def plot_patch(x, y, z, surf, params, N=100, M=100):
     s = surf.eval(params)
 
     z = s[2,:].reshape((N,M))
@@ -78,9 +114,12 @@ def plot_bezier_patch(x, y, z, surf, params, N=100, M=100):
 
 
 if __name__=='__main__':
-    basis_a_deg = 10
-    basis_b_deg = 10
-    tbasis = create_basis(basis_a_deg, basis_b_deg)
+    basis_a_deg = 2
+    basis_b_deg = 2
+    # tbasis = create_bezier_basis(basis_a_deg, basis_b_deg)
+    tbasis_spline, ku, kv = create_bspline_basis(basis_a_deg, basis_b_deg, clamp_a=False, clamp_b=True)
+
+    print(kv.get(), kv.get())
 
     N = 100
     M = 100
@@ -89,10 +128,10 @@ if __name__=='__main__':
     XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
     pts = np.stack((XX.flatten(),YY.flatten()))
 
-    pts, ZZ = compute_basis_evals(pts, tbasis)
+    pts, ZZ = compute_basis_evals(pts, tbasis_spline, N, M)
 
-    plot_basis(XX, YY, ZZ, tbasis)
+    plot_basis(XX, YY, ZZ, tbasis_spline)
 
-    coefs = define_control_poins(tbasis.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
-    surf = gs.nurbs.gsTensorBSpline2(tbasis,coefs)
-    plot_bezier_patch(XX, YY, ZZ, surf, pts)
+    coefs = define_control_poins(tbasis_spline.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
+    surf = gs.nurbs.gsTensorBSpline2(tbasis_spline, coefs)
+    plot_patch(XX, YY, ZZ, surf, pts, N, M)
