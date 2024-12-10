@@ -26,8 +26,9 @@ class SplineEditor:
         self.degree = degree          # Degree of the spline
         self.knots = self.generate_knots()  # Knot vector
         self.curve = self.construct_curve()  # Initial spline
+        self.curvature_ = self.curvature()
         self.dragging_point = None
-        self.fig, self.ax = plt.subplots()
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
         self.plot()  # Plot the curve and control points
         self.cid_press = self.fig.canvas.mpl_connect('button_press_event', self.on_press)
         self.cid_release = self.fig.canvas.mpl_connect('button_release_event', self.on_release)
@@ -79,12 +80,13 @@ class SplineEditor:
         margin = 0.1
         x_min, x_max = self.coefs[:, 0].min(), self.coefs[:, 0].max()
         y_min, y_max = self.coefs[:, 1].min(), self.coefs[:, 1].max()
-        self.ax.set_xlim(x_min - margin, x_max + margin)
-        self.ax.set_ylim(y_min - margin, y_max + margin)
+        self.ax1.set_xlim(x_min - margin, x_max + margin)
+        self.ax1.set_ylim(y_min - margin, y_max + margin)
 
     def plot(self, highlight_range=None, affected_point=None):
         """Plot the curve and control points, highlighting a specific range if provided."""
-        self.ax.clear()
+        self.ax1.clear()
+        self.ax2.clear()
         self.set_axes_limits()
 
         # Define the full range of parameter values based on the knots (excluding the clamped values)
@@ -93,7 +95,7 @@ class SplineEditor:
         evaluated_points = np.array([self.curve.eval(np.array([t])) for t in t_vals]).squeeze()
 
         # Plot the full spline curve in blue
-        self.ax.plot(evaluated_points[:, 0], evaluated_points[:, 1], label='B-Spline Curve', color='blue')   
+        self.ax1.plot(evaluated_points[:, 0], evaluated_points[:, 1], label='B-Spline Curve', color='blue')   
 
         # Highlight the affected control polygon if a control point is specified
         if affected_point is not None:
@@ -102,22 +104,28 @@ class SplineEditor:
             affected_coefs = self.coefs[start:end]
             
             # Plot the affected polygon
-            self.ax.fill(affected_coefs[:, 0], affected_coefs[:, 1], color='red', alpha=0.3, label='Affected Control Polygon')
+            self.ax1.fill(affected_coefs[:, 0], affected_coefs[:, 1], color='red', alpha=0.3, label='Affected Control Polygon')
 
+        self.ax2.plot(t_vals, self.curvature_, label='Curvature')
+        
         # Plot control points and control polygon
-        self.control_points, = self.ax.plot(self.coefs[:, 0], self.coefs[:, 1], 'ro', label='Control Points', picker=5)
-        self.control_polygon, = self.ax.plot(self.coefs[:, 0], self.coefs[:, 1], '--', color='gray', label='Control Polygon')
+        self.control_points, = self.ax1.plot(self.coefs[:, 0], self.coefs[:, 1], 'ro', label='Control Points', picker=5)
+        self.control_polygon, = self.ax1.plot(self.coefs[:, 0], self.coefs[:, 1], '--', color='gray', label='Control Polygon')
 
         # Add the legend and labels
-        self.ax.legend()
-        self.ax.set_xlabel(r'$x$')
-        self.ax.set_ylabel(r'$y$')
+        self.ax1.legend()
+        self.ax1.set_xlabel(r'$x$')
+        self.ax1.set_ylabel(r'$y$')
+
+        self.ax2.legend()
+        self.ax2.set_xlabel(r'$x$')
+        self.ax2.set_ylabel(r'$y$')
 
         # Redraw the plot
         plt.draw()
 
     def on_press(self, event):
-        if event.inaxes != self.ax:
+        if event.inaxes != self.ax1:
             return
 
         min_distance = float('inf')
@@ -136,10 +144,11 @@ class SplineEditor:
         self.dragging_point = None
 
     def on_motion(self, event):
-        if event.inaxes != self.ax or self.dragging_point is None:
+        if event.inaxes != self.ax1 or self.dragging_point is None:
             return
         self.coefs[self.dragging_point] = [event.xdata, event.ydata]
         self.curve = self.construct_curve()
+        self.curvature_ = self.curvature() 
         self.plot(affected_point=self.dragging_point)
 
 
@@ -151,6 +160,16 @@ class SplineEditor:
         highlight_range = (t_min, t_max)
 
         self.plot(highlight_range=highlight_range)
+
+    def curvature(self):
+        N = 100
+        x = np.linspace(self.knots[self.degree], self.knots[-self.degree - 1], N)
+        x = np.matrix(np.meshgrid(x))
+
+        a = self.curve.deriv(x)
+        b = self.curve.deriv2(x)
+
+        return np.linalg.norm(np.cross(a, b, axis=0), axis=0)/np.linalg.norm(a, axis=0)**3
 
 
 if __name__ == '__main__':
