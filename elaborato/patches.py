@@ -117,9 +117,7 @@ if __name__=='__main__':
     basis_a_deg = 2
     basis_b_deg = 2
     # tbasis = create_bezier_basis(basis_a_deg, basis_b_deg)
-    tbasis_spline, ku, kv = create_bspline_basis(basis_a_deg, basis_b_deg, clamp_a=False, clamp_b=True)
-
-    print(kv.get(), kv.get())
+    tbasis, ku, kv = create_bspline_basis(basis_a_deg, basis_b_deg, clamp_a=True, clamp_b=False)
 
     N = 100
     M = 100
@@ -128,10 +126,13 @@ if __name__=='__main__':
     XX, YY = np.meshgrid(x_vals, y_vals, indexing='xy')
     pts = np.stack((XX.flatten(),YY.flatten()))
 
-    pts, ZZ = compute_basis_evals(pts, tbasis_spline, N, M)
+    pts, ZZ = compute_basis_evals(pts, tbasis, N, M)
 
-    plot_basis(XX, YY, ZZ, tbasis_spline)
+    plot_basis(XX, YY, ZZ, tbasis)
 
-    coefs = define_control_poins(tbasis_spline.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
-    surf = gs.nurbs.gsTensorBSpline2(tbasis_spline, coefs)
+    coefs = define_control_poins(tbasis.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
+    surf = gs.nurbs.gsTensorBSpline2(tbasis, coefs)
     plot_patch(XX, YY, ZZ, surf, pts, N, M)
+
+    gs.io.gsWriteParaview(tbasis,"/mnt/d/Workspace/Universita/Numerical Methods/Numerical-Methods-for-Graphics/elaborato/pw_out/basis",100000)
+    gs.io.gsWriteParaview(surf,"/mnt/d/Workspace/Universita/Numerical Methods/Numerical-Methods-for-Graphics/elaborato/pw_out/surf",100000)
