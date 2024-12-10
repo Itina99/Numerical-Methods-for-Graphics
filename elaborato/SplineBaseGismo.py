@@ -4,31 +4,41 @@ import pygismo as gs
 from matplotlib.widgets import Slider
 
 def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
-    # Calculate the total number of knots
-    num_knots = num_basis_functions + degree + 2
-    # Number of interior knots
-    inner_knots = num_knots - 2 * (degree + 1)
-    
+    # Compute the total number of knots
+    num_knots = degree + num_basis_functions + 1
+    inner_knots = num_knots - 2 if not clamp else num_knots - 2 * (degree + 1)
+
     if custom_knots is not None and len(custom_knots) == inner_knots:
-        # Custom knots allow dynamic updates
+        # Use custom knots directly if provided
+        if clamp:
+            knot_vector = np.concatenate([
+                np.zeros(degree + 1),  # Clamped start
+                custom_knots,         # Inner knots
+                np.ones(degree + 1)   # Clamped end
+            ])
+        else:
+            knot_vector = np.concatenate([
+                [0],                  # Start
+                custom_knots,         # Inner knots
+                [1]                   # End
+            ])
+    elif clamp:
+        # Default clamped knot vector
         knot_vector = np.concatenate([
             np.zeros(degree + 1),
-            custom_knots,
+            np.linspace(0, 1, inner_knots + 2)[1:-1],
             np.ones(degree + 1)
         ])
-    elif clamp:
-        # Start with clamped knots at the start
-        knot_vector = np.zeros(degree + 1)
-        # Add the interior knots
-        if inner_knots > 0:
-            knot_vector = np.append(knot_vector, np.linspace(0, 1, inner_knots + 2)[1:-1])
-        # Add clamped knots at the end
-        knot_vector = np.append(knot_vector, np.ones(degree + 1))
     else:
-        # Uniformly spaced knots for unclamped
-        knot_vector = np.linspace(0, 1, num_knots)
-    
+        # Default unclamped knot vector
+        knot_vector = np.concatenate([
+            [0],
+            np.linspace(0, 1, inner_knots + 2)[1:-1],
+            [1]
+        ])
+
     return knot_vector
+
 
 def create_basis(degree=2, num_basis_functions=6, clamp=True, custom_knots=None):
     knot_vector = generate_knots(degree, num_basis_functions, clamp, custom_knots)
@@ -46,7 +56,7 @@ def compute_basis_evals(basis, N=100):
     return x_vals, evals
 
 # Interactive plot function
-def plot_degree_functions_sliders():
+def plot_degree_functions_sliders(clamped=True):    
     # Initial setup
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)  # Leave more space for the sliders
@@ -54,7 +64,7 @@ def plot_degree_functions_sliders():
     # Default values
     degree = 2
     num_basis_functions = 6
-    basis, knot_vector = create_basis(degree=degree, num_basis_functions=num_basis_functions)
+    basis, knot_vector = create_basis(degree=degree, num_basis_functions=num_basis_functions, clamp=clamped)
     x_vals, evals = compute_basis_evals(basis)
 
     # Plot the initial basis functions
@@ -79,7 +89,7 @@ def plot_degree_functions_sliders():
         num_basis_functions = int(sliderfunctions.val)
         degree = int(sliderdegree.val)
         
-        basis, knot_vector = create_basis(degree, num_basis_functions)
+        basis, knot_vector = create_basis(degree, num_basis_functions,clamp=clamped)
         x_vals, evals = compute_basis_evals(basis)
 
         # Adjust number of lines dynamically
@@ -103,16 +113,16 @@ def plot_degree_functions_sliders():
     plt.show()
 
 
-def plot_with_knot_sliders():
+def plot_with_knot_sliders(clamped=True):
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.4)  # Leave more space for the sliders
 
     # User input for initial degree and number of basis functions
     degree = int(input("Degree: "))
     num_basis_functions = int(input("Number of basis functions: "))
-    
+
     # Initial basis and knot vector
-    basis, knot_vector = create_basis(degree=degree, num_basis_functions=num_basis_functions)
+    basis, knot_vector = create_basis(degree=degree, num_basis_functions=num_basis_functions, clamp=clamped)
     x_vals, evals = compute_basis_evals(basis)
 
     # Plot the initial basis functions
@@ -122,8 +132,12 @@ def plot_with_knot_sliders():
         lines.append(line)
 
     # Initial dotted lines for inner knots
-    inner_knot_lines = ax.vlines(
-        knot_vector[degree + 1 : -(degree + 1)],
+    inner_knots_start = degree + 1 if clamped else 1
+    inner_knots_end = -(degree + 1) if clamped else -1
+    inner_knot_positions = knot_vector[inner_knots_start:inner_knots_end]
+    
+    ax.vlines(
+        inner_knot_positions,
         ymin=0, ymax=1, colors='gray', linestyles='dotted', label='Knots'
     )
 
@@ -134,46 +148,79 @@ def plot_with_knot_sliders():
     # Add sliders for custom knots
     custom_knot_axes = []
     custom_knot_sliders = []
-    inner_knots = len(knot_vector) - 2 * (degree + 1)
+    inner_knots = len(inner_knot_positions)
     for i in range(inner_knots):
         ax_slider = plt.axes([0.25, 0.25 - i * 0.05, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-        slider = Slider(ax_slider, f'Knot {i + 1}', 0.01, 0.99, valinit=knot_vector[degree + 1 + i])
+        slider = Slider(ax_slider, f'Knot {i + 1}', 0.01, 0.99, valinit=inner_knot_positions[i])
         custom_knot_sliders.append(slider)
         custom_knot_axes.append(ax_slider)
-    
+
     def update():
         # Collect current slider values for the inner knots
         custom_knots = np.array([slider.val for slider in custom_knot_sliders])
 
-        # Generate new basis and knot vector
-        basis, updated_knot_vector = create_basis(degree, num_basis_functions, custom_knots=custom_knots)
+        # Ensure the custom knots are sorted
+        custom_knots.sort()
+
+        # Rebuild the knot vector for unclamped configuration
+        if not clamped:
+            updated_knot_vector = np.concatenate([
+                [0],                  # Start
+                custom_knots,         # Inner knots (exactly from sliders)
+                [1]                   # End
+            ])
+        else:
+            updated_knot_vector = np.concatenate([
+                [0] * (degree + 1),   # Clamped start
+                custom_knots,         # Inner knots
+                [1] * (degree + 1)    # Clamped end
+            ])
+
+        # Update basis and evaluations
+        try:
+            basis, _ = create_basis(degree, num_basis_functions, custom_knots=custom_knots, clamp=clamped)
+        except Exception as e:
+            print(f"Error in basis creation: {e}")
+            return
+
         x_vals, evals = compute_basis_evals(basis)
 
         # Update basis function plots
         for i, line in enumerate(lines):
             line.set_data(x_vals, evals[i, :])
+        for i in range(len(lines), basis.size()):
+            line, = ax.plot(x_vals, evals[i, :], label=f'Basis function {i + 1}')
+            lines.append(line)
+        while len(lines) > basis.size():
+            line = lines.pop()
+            line.remove()
 
         # Update inner knot lines
-        # Remove existing inner knot lines
-        for collection in ax.collections:
-            collection.remove()
+        for collection in list(ax.collections):
+            collection.remove()  # Safely remove collections from the plot
+
         ax.vlines(
-            updated_knot_vector[degree + 1 : -(degree + 1)],
+            updated_knot_vector[1:-1],  # Exclude the first and last knots
             ymin=0, ymax=1, colors='gray', linestyles='dotted', label='Knots'
         )
 
         # Refresh the figure
         fig.canvas.draw_idle()
 
+
+
     # Connect sliders to the update function
     for slider in custom_knot_sliders:
         slider.on_changed(lambda val, slider=slider: update())
-    
+
     plt.show()
+
 
 
 
                              
 if __name__ == "__main__":
-    plot_with_knot_sliders()
+    plot_with_knot_sliders(clamped=False)
+    plot_with_knot_sliders(clamped=True)
+    plot_degree_functions_sliders(clamped=False)
     plot_degree_functions_sliders()
