@@ -176,4 +176,4 @@ def plot_with_knot_sliders():
                              
 if __name__ == "__main__":
     plot_with_knot_sliders()
-    #plot_degree_functions_sliders()
+    plot_degree_functions_sliders()
