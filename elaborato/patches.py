@@ -128,11 +128,11 @@ if __name__=='__main__':
 
     pts, ZZ = compute_basis_evals(pts, tbasis, N, M)
 
-    plot_basis(XX, YY, ZZ, tbasis)
+    # plot_basis(XX, YY, ZZ, tbasis)
 
     coefs = define_control_poins(tbasis.size(), dims=(basis_a_deg + 1, basis_b_deg + 1))
     surf = gs.nurbs.gsTensorBSpline2(tbasis, coefs)
-    plot_patch(XX, YY, ZZ, surf, pts, N, M)
+    # plot_patch(XX, YY, ZZ, surf, pts, N, M)
 
-    gs.io.gsWriteParaview(tbasis,"/mnt/d/Workspace/Universita/Numerical Methods/Numerical-Methods-for-Graphics/elaborato/pw_out/basis",100000)
-    gs.io.gsWriteParaview(surf,"/mnt/d/Workspace/Universita/Numerical Methods/Numerical-Methods-for-Graphics/elaborato/pw_out/surf",100000)
+    gs.io.gsWriteParaview(tbasis,"elaborato/pw_out/basis",100000)
+    gs.io.gsWriteParaview(surf,"elaborato/pw_out/surf",100000)
