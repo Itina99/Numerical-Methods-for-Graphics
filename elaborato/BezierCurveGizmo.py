@@ -264,4 +264,4 @@ if __name__ == '__main__':
     editor = CurveEditor(control_points, degree)
     editor.linear_precision()
 
-    # bezier_3d(5, curv=True)
+    bezier_3d(5, curv=True)
