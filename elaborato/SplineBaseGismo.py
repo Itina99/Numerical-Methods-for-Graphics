@@ -4,6 +4,10 @@ import pygismo as gs
 from matplotlib.widgets import Slider
 
 def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
+    """
+    Funtion to create a knot vector given a dregree and number of basis function. 
+    Can be clamped to the extrema of the parametrization interval and can be made from a custom array. 
+    """
     # Compute the total number of knots
     num_knots = degree + num_basis_functions + 1
     inner_knots = num_knots - 2 if not clamp else num_knots - 2 * (degree + 1)
@@ -41,6 +45,10 @@ def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
 
 
 def create_basis(degree=2, num_basis_functions=6, clamp=True, custom_knots=None):
+    """
+    Creates a basis given a degree and a number of basis function. 
+    Can be clamped and take an array of custom knots.
+    """
     knot_vector = generate_knots(degree, num_basis_functions, clamp, custom_knots)
     kv = gs.nurbs.gsKnotVector(np.array(knot_vector), degree)
     basis = gs.nurbs.gsBSplineBasis(kv)
@@ -48,6 +56,11 @@ def create_basis(degree=2, num_basis_functions=6, clamp=True, custom_knots=None)
 
 # Basis computations
 def compute_basis_evals(basis, N=100):
+    """
+    Evaluate the basis.
+
+    Given a basis and a number of samples, returns the evaluation points and the evaluations in those points.
+    """
     x_vals = np.linspace(0, 1, N)
     x_input = np.matrix(np.meshgrid(x_vals))
     evals = np.zeros((basis.size(), N))
@@ -56,7 +69,11 @@ def compute_basis_evals(basis, N=100):
     return x_vals, evals
 
 # Interactive plot function
-def plot_degree_functions_sliders(clamped=True):    
+def plot_degree_functions_sliders(clamped=True):
+    """
+    Plots the basis functions and allows to change number and degree.
+    Able to represent both clamped and unclamped knot vectors.
+    """   
     # Initial setup
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)  # Leave more space for the sliders
@@ -114,6 +131,10 @@ def plot_degree_functions_sliders(clamped=True):
 
 
 def plot_with_knot_sliders(clamped=True):
+    """
+    Plots a BSpline basis allowing the user to modify interactively the knots.
+    User needs to input the degree and the number of desired functions.
+    """
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.4)  # Leave more space for the sliders
 
@@ -222,5 +243,5 @@ def plot_with_knot_sliders(clamped=True):
 if __name__ == "__main__":
     plot_with_knot_sliders(clamped=False)
     plot_with_knot_sliders(clamped=True)
-    plot_degree_functions_sliders(clamped=False)
-    plot_degree_functions_sliders()
+    # plot_degree_functions_sliders(clamped=False)
+    # plot_degree_functions_sliders()

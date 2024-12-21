@@ -35,13 +35,10 @@ class SplineEditor:
         self.cid_motion = self.fig.canvas.mpl_connect('motion_notify_event', self.on_motion)
         plt.show()
 
-    def generate_knots(self, open_curve=True):
+    def generate_knots(self):
         """
         Create a uniform knot vector for a B-spline curve.
         
-        Parameters:
-            open_curve (bool): Whether the curve is open or closed. Default is True (open curve).
-            
         Returns:
             np.array: The uniform knot vector.
         """
@@ -51,16 +48,8 @@ class SplineEditor:
         
         num_knots = num_control_points + self.degree + 1  # Total number of knots
         
-        if open_curve:
-            # Open uniform knot vector: clamped at the ends
-            knot_vector = (
-                [0] * (self.degree + 1) +  # Clamped start
-                list(range(1, num_knots - 2 * (self.degree + 1) + 1)) +  # Uniform interior
-                [num_knots - 2 * (self.degree + 1) + 1] * (self.degree + 1)  # Clamped end
-            )
-        else:
-            # Closed uniform knot vector: periodic (wraps around)
-            knot_vector = list(range(num_knots - self.degree))
+        # Closed uniform knot vector: periodic (wraps around)
+        knot_vector = list(range(num_knots - self.degree))
 
         print(f"Generated knot vector: {knot_vector}")  # Debugging statement
         return np.array(knot_vector)
@@ -77,6 +66,9 @@ class SplineEditor:
         return gs.nurbs.gsBSpline(basis, self.coefs)
 
     def set_axes_limits(self):
+        """
+        Limits canvas for visualization.
+        """
         margin = 0.1
         x_min, x_max = self.coefs[:, 0].min(), self.coefs[:, 0].max()
         y_min, y_max = self.coefs[:, 1].min(), self.coefs[:, 1].max()
@@ -99,20 +91,13 @@ class SplineEditor:
 
         # Highlight the affected section of the curve if a control point is specified
         if affected_point is not None:
-            """start = max(0, affected_point - self.degree)
-            end = min(self.coefs.shape[0], affected_point + self.degree + 1)
-            affected_coefs = self.coefs[start:end]
-            
-            # Plot the affected polygon
-            self.ax1.fill(affected_coefs[:, 0], affected_coefs[:, 1], color='red', alpha=0.3, label='Affected Control Polygon')"""
-
             start = self.knots[affected_point]
             end = self.knots[affected_point + self.degree + 1]
             c_vals = [i for i in t_vals if i >= start and i <= end]
             affected_points = np.array([self.curve.eval(np.array([c])) for c in c_vals]).squeeze()
             self.ax1.plot(affected_points[:, 0], affected_points[:, 1], label='Affected curve', color='purple', linewidth='3')
 
-        self.ax2.plot(t_vals, self.curvature_, label='Curvature')
+        self.ax2.plot(t_vals, self.curvature_)
         
         # Plot control points and control polygon
         self.control_points, = self.ax1.plot(self.coefs[:, 0], self.coefs[:, 1], 'ro', label='Control Points', picker=5)
@@ -123,9 +108,11 @@ class SplineEditor:
         self.ax1.set_xlabel(r'$x$')
         self.ax1.set_ylabel(r'$y$')
 
-        self.ax2.legend()
         self.ax2.set_xlabel(r'$x$')
         self.ax2.set_ylabel(r'$y$')
+
+        self.ax1.set_title(f"BSpline curve of degree {self.degree}")
+        self.ax2.set_title(f"Curvature")
 
         # Redraw the plot
         plt.draw()
@@ -156,16 +143,6 @@ class SplineEditor:
         self.curve = self.construct_curve()
         self.curvature_ = self.curvature() 
         self.plot(affected_point=self.dragging_point)
-
-
-    """def visualize_locality(self, modified_point_index):
-        start = self.knots[modified_point_index]
-        end = self.knots[modified_point_index + self.degree + 1]
-        t_min = start / self.knots[-1]
-        t_max = end / self.knots[-1]
-        highlight_range = (t_min, t_max)
-
-        self.plot(highlight_range=highlight_range)"""
 
     def curvature(self):
         N = 100

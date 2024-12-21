@@ -5,6 +5,9 @@ from matplotlib.widgets import Slider
 import math
 
 def select_points():
+    """
+    Function that takes input from user on a plot and generates control points accordingly
+    """
     plt.figure()
     plt.plot()  # Example plot
     plt.title('Click to select points, press Enter to finish')
@@ -53,7 +56,7 @@ class CurveEditor:
         self.ax1.set_ylim(y_min - margin, y_max + margin)
 
     def plot(self):
-        """Plot the curve, control points, and control polygon."""
+        """Plot the curve, control points, control polygon and curvature and allows insteraction to move the points around."""
         self.ax1.clear()
         self.ax2.clear()
 
@@ -69,7 +72,7 @@ class CurveEditor:
         # Plot the curve
         self.ax1.plot(y[0, :], y[1, :], label='Bezier Curve')
         print(self.curvature_)
-        self.ax2.plot(x_space, self.curvature_, label='Curvature')
+        self.ax2.plot(x_space, self.curvature_)
 
         # Plot control points and polygon
         self.control_points, = self.ax1.plot(self.coefs[:, 0], self.coefs[:, 1], 'ro', label='Control Points', picker=5)
@@ -78,10 +81,11 @@ class CurveEditor:
         self.ax1.legend()
         self.ax1.set_xlabel(r'$x$')
         self.ax1.set_ylabel(r'$y$')
+        self.ax1.set_title(f"Bezier curve of degree {self.degree}")
 
-        self.ax2.legend()
         self.ax2.set_xlabel(r'$x$')
         self.ax2.set_ylabel(r'$y$')
+        self.ax2.set_title("Curvature")
 
         plt.draw()
 
@@ -127,6 +131,9 @@ class CurveEditor:
         basis = []
         ctl_points = []
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 10))
+        ax1.set_title("Degree 2")
+        ax2.set_title("Degree 3")
+        ax3.set_title("Degree 4")
         axes = [ax1, ax2, ax3]
         for idx, d in enumerate(degrees):
             knot_array = np.zeros(d + 1)
@@ -162,6 +169,9 @@ class CurveEditor:
         plt.show()
 
     def curvature(self):
+        """
+        Function that computes the curvature using the derivatives given by pygismo
+        """
         N = 100
         x = np.linspace(0, 1, N)
         x = np.matrix(np.meshgrid(x))
@@ -173,7 +183,7 @@ class CurveEditor:
 
 def bezier_3d(deg, curv=False):
     """
-        Permette di disegnare una curva di Bezier nello spazio
+    Function that given a degree plots a bezier curve in 3D using control points sampled at random. 
     """
     # Creo la base di bernstein corrispondente al grado in input
     knot_array = np.zeros(deg + 1)
@@ -210,6 +220,9 @@ def bezier_3d(deg, curv=False):
     plt.show()
 
 def curvature(curve, param_space):
+    """
+    Function that computes the curvature using the derivatives given by pygismo
+    """
     a = curve.deriv(param_space)
     b = curve.deriv2(param_space)
 
@@ -217,44 +230,6 @@ def curvature(curve, param_space):
 
     return curvature
 
-"""
-In cantiere, una funzione per calcolare la torsione, necessita di derivate terze
-def torsion(curve, param_sapce):
-
-    a = curve.deriv()
-    b = curve.deriv2()
-"""    
-
-"""
-def delta(ctl_points, deg, idx):
-    if deg == 0:
-        return ctl_points[idx]
-    else:
-        return delta(ctl_points, deg-1, idx+1) - delta(ctl_points, deg -1, idx)
-"""
-
-"""
-Funzione d'emergenza per il calcolo della derivata; equivalente a curve.deriv
-def ith_derivative(pts, curve, i, param_range):
-    basis = curve.basis()
-    degree = curve.degree()
-
-    sum = 0
-    for j in range(degree - i + 1):
-        sum += np.matmul(delta(pts, i, j).reshape(2, 1), basis.evalSingle(j, param_range))
-    return (math.factorial(degree)/math.factorial(degree-i)) * sum 
-"""
-
-"""
-# Funzione d'emergenza per il calcolo della derivata prima; equivalente a curve.deriv
-def st_derivative(points, curve, param):
-    basis = curve.basis()
-    
-    sum = 0
-    for i in range(2):
-        sum += np.matmul((points[i+1, :] - points[i, :]).reshape(2, 1), basis.evalSingle(i, param))
-    return 2 * sum 
-"""
 
 if __name__ == '__main__':
     #Select points interactively

@@ -5,6 +5,10 @@ import numpy as np
 import pygismo as gs
 
 def create_bezier_basis(degree_a = 2, degree_b = 2):
+    """
+    Creates a 2D bezier tensor product basis by creating two knot vectors of the input degrees.
+    Input degrees can be the same or different between the two basis.
+    """
     if degree_a == degree_b:
         degree = degree_a
 
@@ -28,6 +32,10 @@ def create_bezier_basis(degree_a = 2, degree_b = 2):
     return tens_basis
 
 def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
+    """
+    Function to generate a knot vector, clamped or unclamped given the degree of the desired basis and the number of basis function.
+    Can accept a custom array to create the knot vector.
+    """
     # Calculate the total number of knots
     num_knots = num_basis_functions + degree + 2
     # Number of interior knots
@@ -56,6 +64,11 @@ def generate_knots(degree, num_basis_functions, clamp=True, custom_knots=None):
 
 
 def create_bspline_basis(degree_a=2, degree_b=2, num_basis_function_a=2, num_basis_function_b=2, clamp_a=True, clamp_b=True, custom_a=None, custom_b=None):
+    """
+    Creates a 2D BSpline tensor product basis by creating two knot vectors of the input degrees and the given number of basis function.
+    Each knot vector can be clamped or composed from a custom array of knot values.
+    Input degrees, number of functions, clamping and custm values can be the same or different between the two basis.
+    """
     knot_vector_u = generate_knots(degree_a, num_basis_function_a, clamp_a, custom_a)
     knot_vector_v = generate_knots(degree_b, num_basis_function_b, clamp_b, custom_b)
     kv_u = gs.nurbs.gsKnotVector(np.array(knot_vector_u), degree_a)
@@ -65,6 +78,11 @@ def create_bspline_basis(degree_a=2, degree_b=2, num_basis_function_a=2, num_bas
 
 #basis computations
 def compute_basis_evals(params, basis, N=100, M=100):
+    """
+    Evaluate the basis.
+
+    Given a 2D basis and a number of samples for each basis, returns the evaluation points and the evaluations in those points.
+    """
     ZZ = []
     for i in range(0, basis.size()):
         eval = basis.evalSingle(i, params)
@@ -73,6 +91,10 @@ def compute_basis_evals(params, basis, N=100, M=100):
 
 # Control point definition
 def define_control_poins(basis_size, dims=None):
+    """
+    Function used to create the control point grid. 
+    Z values are given at random for each point to create non trivial surfaces.
+    """
     coefs = np.zeros((basis_size, 3))
 
     if np.sqrt(basis_size) == int(np.sqrt(basis_size)):
@@ -93,6 +115,9 @@ def define_control_poins(basis_size, dims=None):
 
 # Basis plotting
 def plot_basis(x, y, z, basis):
+    """
+    Functio to plot the basis function in 3D
+    """
     fig = plt.figure()
     ax = fig.add_subplot(projection ='3d')
     print(basis.size())
@@ -102,6 +127,9 @@ def plot_basis(x, y, z, basis):
 
 # Patch plotting
 def plot_patch(x, y, z, surf, params, N=100, M=100):
+    """
+    Function to plot the surface.
+    """
     s = surf.eval(params)
 
     z = s[2,:].reshape((N,M))

@@ -3,18 +3,24 @@ import numpy as np
 import pygismo as gs
 from matplotlib.widgets import Slider
 
-#plotting
+def create_basis(degree = 2):
+    """
+    Function to create basis using pygismo.
 
-
-def create_basis( degree = 2):
+    Input the desired degree of the basis, returns the basis.
+    """
     knot_array = np.zeros(degree + 1)
     knot_array = np.append(knot_array, np.ones(degree + 1))
     kv = gs.nurbs.gsKnotVector(np.array(knot_array), degree)
     basis = gs.nurbs.gsBSplineBasis(kv)
     return basis
 
-#basis computations
 def compute_basis_evals(basis, N=100):
+    """
+    Evaluate the basis.
+
+    Given a basis and a number of samples, returns the evaluation points and the evaluations in those points.
+    """
     x_vals = np.linspace(0, 1, N)
     x_input = np.matrix(np.meshgrid(x_vals))
     evals = np.zeros((basis.size(), N))
@@ -24,7 +30,9 @@ def compute_basis_evals(basis, N=100):
 
 
 def plot_basis_functions():
-    # Initial setup
+    """
+    Function to plot all basis function with sliders to adjust the number of functions and their degree.
+    """
     fig, ax = plt.subplots()
     plt.subplots_adjust(bottom=0.25)
     
